@@ -18,7 +18,7 @@ You can download the latest version from [Releases](https://github.com/yoohya/te
 
 ```bash
 # Example for macOS amd64
-curl -L https://github.com/yoohya/terracotta/releases/download/v0.1.4/terracotta_0.1.4_darwin_amd64.tar.gz | tar -xz
+curl -L https://github.com/yoohya/terracotta/releases/download/v0.1.4/terracotta_0.1.4_darwin_amd64.tar.gz | tar -xz terracotta
 chmod +x terracotta
 ./terracotta version
 ```
