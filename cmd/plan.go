@@ -22,10 +22,16 @@ var planCmd = &cobra.Command{
 
 		for _, mod := range cfg.Modules {
 			modulePath := filepath.Join("environments", cfg.Environment, mod.Service, mod.Name)
+			fmt.Printf("[INIT] %s (%s)\n", mod.Name, modulePath)
+			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
+				fmt.Printf("Error running init for %s: %v\n", mod.Name, err)
+				os.Exit(1)
+			}
+
 			fmt.Printf("[PLAN] %s (%s)\n", mod.Name, modulePath)
-			err := terraform.RunCommand(modulePath, "plan")
-			if err != nil {
+			if err := terraform.RunCommand(modulePath, "plan"); err != nil {
 				fmt.Printf("Error running plan for %s: %v\n", mod.Name, err)
+				os.Exit(1)
 			}
 		}
 	},
