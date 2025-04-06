@@ -37,7 +37,7 @@ make build
 ### Sample YAML Configuration
 
 ```yaml
-environment: dev
+base_path: environments/dev
 modules:
   - name: network
     service: shared
