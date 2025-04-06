@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	Environment string   `yaml:"environment"`
-	Modules     []Module `yaml:"modules"`
+	BasePath string   `yaml:"base_path"`
+	Modules  []Module `yaml:"modules"`
 }
 
 type Module struct {

@@ -21,7 +21,7 @@ var applyCmd = &cobra.Command{
 		}
 
 		for _, mod := range cfg.Modules {
-			modulePath := filepath.Join("environments", cfg.Environment, mod.Service, mod.Name)
+			modulePath := filepath.Join(cfg.BasePath, mod.Service, mod.Name)
 			fmt.Printf("[INIT] %s (%s)\n", mod.Name, modulePath)
 			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
 				fmt.Printf("Error running init for %s: %v\n", mod.Name, err)
@@ -39,7 +39,5 @@ var applyCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(applyCmd)
-	applyCmd.Flags().StringP("env", "e", "", "Specify the environment (required)")
-	applyCmd.MarkFlagRequired("env")
 	applyCmd.Flags().StringVarP(&configPath, "config", "c", "terracotta.yaml", "Path to config file")
 }
