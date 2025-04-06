@@ -20,17 +20,29 @@ var planCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		for _, mod := range cfg.Modules {
-			modulePath := filepath.Join(cfg.BasePath, mod.Service, mod.Name)
-			fmt.Printf("[INIT] %s (%s)\n", mod.Name, modulePath)
+		graph, err := config.BuildExecutionGraph(cfg)
+		if err != nil {
+			fmt.Printf("Failed to build execution graph: %v\n", err)
+			os.Exit(1)
+		}
+
+		sortedModules, err := graph.TopoSortedModules()
+		if err != nil {
+			fmt.Printf("Failed to resolve module order: %v\n", err)
+			os.Exit(1)
+		}
+
+		for _, mod := range sortedModules {
+			modulePath := filepath.Join(cfg.BasePath, mod.Path)
+			fmt.Printf("[INIT] %s (%s)\n", mod.Path, modulePath)
 			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
-				fmt.Printf("Error running init for %s: %v\n", mod.Name, err)
+				fmt.Printf("Error running init for %s: %v\n", mod.Path, err)
 				os.Exit(1)
 			}
 
-			fmt.Printf("[PLAN] %s (%s)\n", mod.Name, modulePath)
+			fmt.Printf("[PLAN] %s (%s)\n", mod.Path, modulePath)
 			if err := terraform.RunCommand(modulePath, "plan"); err != nil {
-				fmt.Printf("Error running plan for %s: %v\n", mod.Name, err)
+				fmt.Printf("Error running plan for %s: %v\n", mod.Path, err)
 				os.Exit(1)
 			}
 		}

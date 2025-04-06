@@ -39,16 +39,14 @@ make build
 ```yaml
 base_path: environments/dev
 modules:
-  - name: network
-    service: shared
-  - name: backend
-    service: serviceA
-  - name: backend
-    service: serviceB
-  - name: backend
-    service: serviceC
-  - name: monitoring
-    service: shared
+  - path: shared/network
+  - path: serviceA/backend
+    depends_on: ["shared/network"]
+  - path: serviceB/backend
+    depends_on: ["shared/network"]
+  - path: serviceC/backend
+    depends_on: ["shared/network"]
+  - path: shared/monitoring
 ```
 
 ### Execute Plan

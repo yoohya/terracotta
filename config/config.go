@@ -12,8 +12,8 @@ type Config struct {
 }
 
 type Module struct {
-	Name    string `yaml:"name"`
-	Service string `yaml:"service"`
+	Path      string   `yaml:"path"`
+	DependsOn []string `yaml:"depends_on,omitempty"`
 }
 
 func LoadConfig(path string) (*Config, error) {
