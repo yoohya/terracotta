@@ -1,0 +1,12 @@
+environment: dev
+modules:
+  - name: api_gateway_integration
+    service: common
+  - name: slack_notification
+    service: common
+  - name: monitoring
+    service: productA
+  - name: monitoring
+    service: productB
+  - name: monitoring
+    service: productC
