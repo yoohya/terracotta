@@ -10,6 +10,12 @@ import (
 	"github.com/yoohya/terracotta/terraform"
 )
 
+type applyResult struct {
+	Module string
+	Status string // "success", "failed", "skipped"
+	Error  error
+}
+
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Apply Terraform modules for a specified environment",
@@ -32,19 +38,53 @@ var applyCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var results []applyResult
+
 		for _, mod := range sortedModules {
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
-			fmt.Printf("[INIT] %s (%s)\n", mod.Path, modulePath)
+			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
 			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
-				fmt.Printf("Error running init for %s: %v\n", mod.Path, err)
-				os.Exit(1)
+				fmt.Printf("✖ [%s] Terraform init failed!\n", mod.Path)
+				fmt.Printf("    Module path : %s\n", modulePath)
+				fmt.Printf("    Command     : terraform init -input=false\n")
+				fmt.Printf("    Error       : %v\n", err)
+				results = append(results, applyResult{Module: mod.Path, Status: "failed", Error: fmt.Errorf("init failed: %v", err)})
+				break
 			}
 
-			fmt.Printf("[APPLY] %s (%s)\n", mod.Path, modulePath)
+			fmt.Printf("[%s] APPLY (%s)\n", mod.Path, modulePath)
 			if err := terraform.RunCommand(modulePath, "apply", "-auto-approve"); err != nil {
-				fmt.Printf("Error running apply for %s: %v\n", mod.Path, err)
-				os.Exit(1)
+				fmt.Printf("✖ [%s] Terraform apply failed!\n", mod.Path)
+				fmt.Printf("    Module path : %s\n", modulePath)
+				fmt.Printf("    Command     : terraform apply -auto-approve\n")
+				fmt.Printf("    Error       : %v\n", err)
+				results = append(results, applyResult{Module: mod.Path, Status: "failed", Error: fmt.Errorf("apply failed: %v", err)})
+				break
 			}
+
+			results = append(results, applyResult{Module: mod.Path, Status: "success"})
+		}
+
+		fmt.Println("\nApply Summary:")
+		encounteredFailure := false
+		executed := map[string]bool{}
+		for _, res := range results {
+			executed[res.Module] = true
+			switch res.Status {
+			case "success":
+				fmt.Printf("✔ %s: applied successfully\n", res.Module)
+			case "failed":
+				fmt.Printf("✖ %s: failed - %v\n", res.Module, res.Error)
+				encounteredFailure = true
+			}
+		}
+		for _, mod := range sortedModules {
+			if !executed[mod.Path] {
+				fmt.Printf("⏭ %s: skipped\n", mod.Path)
+			}
+		}
+		if encounteredFailure {
+			os.Exit(1)
 		}
 	},
 }

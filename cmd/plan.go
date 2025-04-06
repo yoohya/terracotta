@@ -10,6 +10,11 @@ import (
 	"github.com/yoohya/terracotta/terraform"
 )
 
+type planResult struct {
+	Module string
+	Error  error
+}
+
 var planCmd = &cobra.Command{
 	Use:   "plan",
 	Short: "Plan Terraform modules",
@@ -32,19 +37,39 @@ var planCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var results []planResult
+
 		for _, mod := range sortedModules {
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
-			fmt.Printf("[INIT] %s (%s)\n", mod.Path, modulePath)
+			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
 			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
-				fmt.Printf("Error running init for %s: %v\n", mod.Path, err)
-				os.Exit(1)
+				fmt.Printf("[%s] Error running init: %v\n", mod.Path, err)
+				results = append(results, planResult{Module: mod.Path, Error: fmt.Errorf("init failed: %v", err)})
+				continue
 			}
 
-			fmt.Printf("[PLAN] %s (%s)\n", mod.Path, modulePath)
+			fmt.Printf("[%s] PLAN (%s)\n", mod.Path, modulePath)
 			if err := terraform.RunCommand(modulePath, "plan"); err != nil {
-				fmt.Printf("Error running plan for %s: %v\n", mod.Path, err)
-				os.Exit(1)
+				fmt.Printf("[%s] Error running plan: %v\n", mod.Path, err)
+				results = append(results, planResult{Module: mod.Path, Error: fmt.Errorf("plan failed: %v", err)})
+				continue
 			}
+
+			results = append(results, planResult{Module: mod.Path, Error: nil})
+		}
+
+		fmt.Println("\nPlan Summary:")
+		var failed bool
+		for _, res := range results {
+			if res.Error != nil {
+				fmt.Printf("✖ %s: %v\n", res.Module, res.Error)
+				failed = true
+			} else {
+				fmt.Printf("✔ %s: plan succeeded\n", res.Module)
+			}
+		}
+		if failed {
+			os.Exit(1)
 		}
 	},
 }
