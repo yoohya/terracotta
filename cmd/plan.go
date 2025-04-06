@@ -42,14 +42,14 @@ var planCmd = &cobra.Command{
 		for _, mod := range sortedModules {
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
 			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
-			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
+			if err := terraform.RunCommand(mod.Path, modulePath, "init", "-input=false"); err != nil {
 				fmt.Printf("[%s] Error running init: %v\n", mod.Path, err)
 				results = append(results, planResult{Module: mod.Path, Error: fmt.Errorf("init failed: %v", err)})
 				continue
 			}
 
 			fmt.Printf("[%s] PLAN (%s)\n", mod.Path, modulePath)
-			if err := terraform.RunCommand(modulePath, "plan"); err != nil {
+			if err := terraform.RunCommand(mod.Path, modulePath, "plan"); err != nil {
 				fmt.Printf("[%s] Error running plan: %v\n", mod.Path, err)
 				results = append(results, planResult{Module: mod.Path, Error: fmt.Errorf("plan failed: %v", err)})
 				continue

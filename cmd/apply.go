@@ -43,7 +43,7 @@ var applyCmd = &cobra.Command{
 		for _, mod := range sortedModules {
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
 			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
-			if err := terraform.RunCommand(modulePath, "init", "-input=false"); err != nil {
+			if err := terraform.RunCommand(mod.Path, modulePath, "init", "-input=false"); err != nil {
 				fmt.Printf("✖ [%s] Terraform init failed!\n", mod.Path)
 				fmt.Printf("    Module path : %s\n", modulePath)
 				fmt.Printf("    Command     : terraform init -input=false\n")
@@ -53,7 +53,7 @@ var applyCmd = &cobra.Command{
 			}
 
 			fmt.Printf("[%s] APPLY (%s)\n", mod.Path, modulePath)
-			if err := terraform.RunCommand(modulePath, "apply", "-auto-approve"); err != nil {
+			if err := terraform.RunCommand(mod.Path, modulePath, "apply", "-auto-approve"); err != nil {
 				fmt.Printf("✖ [%s] Terraform apply failed!\n", mod.Path)
 				fmt.Printf("    Module path : %s\n", modulePath)
 				fmt.Printf("    Command     : terraform apply -auto-approve\n")
