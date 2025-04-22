@@ -41,12 +41,19 @@ base_path: environments/dev
 modules:
   - path: shared/network
   - path: serviceA/backend
-    depends_on: ["shared/network"]
+    depends_on:
+      - shared/network
   - path: serviceB/backend
-    depends_on: ["shared/network"]
+    depends_on:
+      - shared/network
   - path: serviceC/backend
-    depends_on: ["shared/network"]
+    depends_on:
+      - shared/network
   - path: shared/monitoring
+    depends_on:
+      - serviceA/backend
+      - serviceB/backend
+      - serviceC/backend
 ```
 
 ### Execute Plan

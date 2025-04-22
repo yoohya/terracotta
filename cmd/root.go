@@ -8,6 +8,7 @@ import (
 )
 
 var configPath string
+var awsProfile string
 
 var rootCmd = &cobra.Command{
 	Use:   "terracotta",

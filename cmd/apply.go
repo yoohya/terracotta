@@ -38,6 +38,10 @@ var applyCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if awsProfile != "" {
+			os.Setenv("AWS_PROFILE", awsProfile)
+		}
+
 		var results []applyResult
 
 		for _, mod := range sortedModules {
@@ -92,4 +96,5 @@ var applyCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(applyCmd)
 	applyCmd.Flags().StringVarP(&configPath, "config", "c", "terracotta.yaml", "Path to config file")
+	applyCmd.Flags().StringVar(&awsProfile, "profile", "", "AWS profile to use")
 }
