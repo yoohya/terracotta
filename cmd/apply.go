@@ -50,20 +50,20 @@ var applyCmd = &cobra.Command{
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
 			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
 			// init コマンドの引数を構築
-		initArgs := []string{"init", "-input=false"}
-		if upgradeProviders {
-			initArgs = append(initArgs, "-upgrade")
-			fmt.Printf("[%s] Provider upgrade enabled\n", mod.Path)
-		}
+			initArgs := []string{"init", "-input=false"}
+			if upgradeProviders {
+				initArgs = append(initArgs, "-upgrade")
+				fmt.Printf("[%s] Provider upgrade enabled\n", mod.Path)
+			}
 
-		if err := terraform.RunCommand(mod.Path, modulePath, initArgs...); err != nil {
+			if err := terraform.RunCommand(mod.Path, modulePath, initArgs...); err != nil {
 				fmt.Printf("✖ [%s] Terraform init failed!\n", mod.Path)
 				fmt.Printf("    Module path : %s\n", modulePath)
 				cmdStr := "terraform init -input=false"
-			if upgradeProviders {
-				cmdStr += " -upgrade"
-			}
-			fmt.Printf("    Command     : %s\n", cmdStr)
+				if upgradeProviders {
+					cmdStr += " -upgrade"
+				}
+				fmt.Printf("    Command     : %s\n", cmdStr)
 				fmt.Printf("    Error       : %v\n", err)
 				results = append(results, applyResult{Module: mod.Path, Status: "failed", Error: fmt.Errorf("init failed: %v", err)})
 				break

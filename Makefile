@@ -35,9 +35,24 @@ test-race:
 # Run all quality checks (tests + race detector)
 test-all: test-race test-coverage
 
+# Format Go code
+fmt:
+	gofmt -w .
+
+# Check if code is formatted
+fmt-check:
+	@if [ -n "$$(gofmt -l .)" ]; then \
+		echo "The following files are not formatted:"; \
+		gofmt -l .; \
+		exit 1; \
+	fi
+
 # Run linter
 lint:
 	golangci-lint run
+
+# Run linter with formatting check
+lint-all: fmt-check lint
 
 # Install golangci-lint (if not already installed)
 install-lint:

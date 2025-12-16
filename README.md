@@ -121,8 +121,17 @@ make test-race
 # Run all quality checks
 make test-all
 
+# Format Go code
+make fmt
+
+# Check if code is formatted
+make fmt-check
+
 # Run linter
 make lint
+
+# Run linter with formatting check
+make lint-all
 
 # Install golangci-lint (if not already installed)
 make install-lint

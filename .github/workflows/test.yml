@@ -72,6 +72,9 @@ jobs:
         with:
           go-version: '1.24'
 
+      - name: Check code formatting
+        run: make fmt-check
+
       - name: Install golangci-lint
         run: make install-lint
 
