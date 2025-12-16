@@ -1,0 +1,7 @@
+base_path: test/path
+modules:
+  - path: module-a
+  - path: module-b
+    depends_on: ["module-a"]
+  - path: module-c
+    depends_on: ["module-a", "module-b"]

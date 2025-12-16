@@ -10,6 +10,27 @@ build:
 clean:
 	rm -rf bin dist
 
+# Clean build artifacts and test cache
+clean-all: clean
+	go clean -testcache
+	rm -f coverage.out coverage.html
+
 # Create a release using Goreleaser
 release:
 	goreleaser release --clean
+
+# Run tests (disables cache with -count=1)
+test:
+	go test -count=1 -v ./...
+
+# Run tests with coverage (disables cache with -count=1)
+test-coverage:
+	go test -count=1 -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+# Run tests with race detector (disables cache with -count=1)
+test-race:
+	go test -count=1 -v -race ./...
+
+# Run all quality checks (tests + race detector)
+test-all: test-race test-coverage

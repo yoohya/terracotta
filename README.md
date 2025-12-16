@@ -104,6 +104,55 @@ terracotta apply --config examples/terracotta.yaml --upgrade
 terracotta version
 ```
 
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests (cache disabled with -count=1)
+make test
+
+# Run tests with coverage report
+make test-coverage
+
+# Run tests with race detector
+make test-race
+
+# Run all quality checks
+make test-all
+
+# Clean test cache and coverage files
+make clean-all
+```
+
+> **Note**: All test targets use `-count=1` to disable Go's test cache, ensuring fresh test execution every time. This is important for tests that depend on external resources like files or environment variables.
+
+### Test Coverage
+
+Current test coverage:
+- `config` package: 100%
+- `terraform` package: 70%
+
+The test suite includes:
+- Unit tests for YAML configuration parsing
+- Dependency graph construction and validation
+- Topological sort algorithm testing
+- Cyclic dependency detection
+- Unknown dependency error handling
+- Terraform command execution (integration tests)
+
+**Note**: Integration tests that execute actual Terraform commands require Terraform to be installed. In CI environments, Terraform is automatically installed via `hashicorp/setup-terraform` action. Locally, if Terraform is not found, these tests are gracefully skipped.
+
+### Building
+
+```bash
+# Build the binary
+make build
+
+# Clean build artifacts
+make clean
+```
+
 ## Release
 
 Releases are triggered by pushing a version tag:
