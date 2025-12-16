@@ -121,6 +121,12 @@ make test-race
 # Run all quality checks
 make test-all
 
+# Run linter
+make lint
+
+# Install golangci-lint (if not already installed)
+make install-lint
+
 # Clean test cache and coverage files
 make clean-all
 ```

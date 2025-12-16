@@ -34,3 +34,12 @@ test-race:
 
 # Run all quality checks (tests + race detector)
 test-all: test-race test-coverage
+
+# Run linter
+lint:
+	golangci-lint run
+
+# Install golangci-lint (if not already installed)
+install-lint:
+	@which golangci-lint > /dev/null || \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin

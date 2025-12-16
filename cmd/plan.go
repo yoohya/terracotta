@@ -38,7 +38,9 @@ var planCmd = &cobra.Command{
 		}
 
 		if awsProfile != "" {
-			os.Setenv("AWS_PROFILE", awsProfile)
+			if err := os.Setenv("AWS_PROFILE", awsProfile); err != nil {
+				fmt.Printf("Warning: failed to set AWS_PROFILE: %v\n", err)
+			}
 		}
 
 		var results []planResult

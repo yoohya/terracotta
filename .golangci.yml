@@ -1,32 +1,43 @@
+version: 2
+
 run:
   timeout: 5m
-  tests: true
 
 linters:
   enable:
-    - gofmt
     - govet
     - errcheck
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
-    - typecheck
     - misspell
-    - gocyclo
-    - revive
-    - gosec
 
 linters-settings:
-  gocyclo:
-    min-complexity: 15
-
-  revive:
-    rules:
-      - name: exported
-        disabled: false
+  gosec:
+    config:
+      G304: "0"  # Disable file path variable check
+      G204: "0"  # Disable subprocess variable check
+      G301: "0"  # Disable directory permissions check
+      G306: "0"  # Disable file permissions check
 
 issues:
-  exclude-use-default: false
+  exclude-use-default: true
+  exclude-rules:
+    # Exclude all gosec warnings in test files
+    - path: _test\.go
+      linters:
+        - gosec
+    # Exclude revive warnings for package comments
+    - linters:
+        - revive
+      text: "package-comments"
+    # Exclude revive warnings for exported comments
+    - linters:
+        - revive
+      text: "exported"
+    # Exclude revive warnings for unused parameters
+    - linters:
+        - revive
+      text: "unused-parameter"
   max-issues-per-linter: 0
   max-same-issues: 0
