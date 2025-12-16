@@ -62,10 +62,40 @@ modules:
 terracotta plan --config examples/terracotta.yaml
 ```
 
+Available options:
+- `--config, -c`: Path to config file (default: `terracotta.yaml`)
+- `--profile`: AWS profile to use for authentication
+- `--upgrade`: Upgrade providers to the latest version during `terraform init`
+
+Examples:
+
+```bash
+# Plan with AWS profile
+terracotta plan --config examples/terracotta.yaml --profile my-aws-profile
+
+# Plan with provider upgrade
+terracotta plan --config examples/terracotta.yaml --upgrade
+```
+
 ### Execute Apply
 
 ```bash
 terracotta apply --config examples/terracotta.yaml
+```
+
+Available options:
+- `--config, -c`: Path to config file (default: `terracotta.yaml`)
+- `--profile`: AWS profile to use for authentication
+- `--upgrade`: Upgrade providers to the latest version during `terraform init`
+
+Examples:
+
+```bash
+# Apply with AWS profile
+terracotta apply --config examples/terracotta.yaml --profile my-aws-profile
+
+# Apply with provider upgrade
+terracotta apply --config examples/terracotta.yaml --upgrade
 ```
 
 ### Show Version
