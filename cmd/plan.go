@@ -46,7 +46,14 @@ var planCmd = &cobra.Command{
 		for _, mod := range sortedModules {
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
 			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
-			if err := terraform.RunCommand(mod.Path, modulePath, "init", "-input=false"); err != nil {
+			// init コマンドの引数を構築
+		initArgs := []string{"init", "-input=false"}
+		if upgradeProviders {
+			initArgs = append(initArgs, "-upgrade")
+			fmt.Printf("[%s] Provider upgrade enabled\n", mod.Path)
+		}
+
+		if err := terraform.RunCommand(mod.Path, modulePath, initArgs...); err != nil {
 				fmt.Printf("[%s] Error running init: %v\n", mod.Path, err)
 				results = append(results, planResult{Module: mod.Path, Error: fmt.Errorf("init failed: %v", err)})
 				continue
@@ -82,4 +89,5 @@ func init() {
 	rootCmd.AddCommand(planCmd)
 	planCmd.Flags().StringVarP(&configPath, "config", "c", "terracotta.yaml", "Path to config file")
 	planCmd.Flags().StringVar(&awsProfile, "profile", "", "AWS profile to use")
+	planCmd.Flags().BoolVar(&upgradeProviders, "upgrade", false, "Upgrade providers to the latest version")
 }

@@ -9,6 +9,7 @@ import (
 
 var configPath string
 var awsProfile string
+var upgradeProviders bool
 
 var rootCmd = &cobra.Command{
 	Use:   "terracotta",
