@@ -45,14 +45,11 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Run tests
-        run: make test
+      - name: Run tests with coverage
+        run: make test-coverage
 
       - name: Run tests with race detector
         run: make test-race
-
-      - name: Generate coverage report
-        run: go test -count=1 -coverprofile=coverage.out ./...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
