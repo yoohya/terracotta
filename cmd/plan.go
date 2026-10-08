@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/yoohya/terracotta/config"
 	"github.com/yoohya/terracotta/terraform"
 )
 
@@ -19,39 +18,15 @@ var planCmd = &cobra.Command{
 	Use:   "plan",
 	Short: "Plan Terraform modules",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.LoadConfig(configPath)
-		if err != nil {
-			fmt.Printf("Failed to load config: %v\n", err)
-			os.Exit(1)
-		}
-
-		graph, err := config.BuildExecutionGraph(cfg)
-		if err != nil {
-			fmt.Printf("Failed to build execution graph: %v\n", err)
-			os.Exit(1)
-		}
-
-		sortedModules, err := graph.TopoSortedModules()
-		if err != nil {
-			fmt.Printf("Failed to resolve module order: %v\n", err)
-			os.Exit(1)
-		}
-
-		if awsProfile != "" {
-			if err := os.Setenv("AWS_PROFILE", awsProfile); err != nil {
-				fmt.Printf("Warning: failed to set AWS_PROFILE: %v\n", err)
-			}
-		}
+		cfg, sortedModules := prepareModules()
 
 		var results []planResult
 
 		for _, mod := range sortedModules {
 			modulePath := filepath.Join(cfg.BasePath, mod.Path)
 			fmt.Printf("[%s] INIT (%s)\n", mod.Path, modulePath)
-			// init コマンドの引数を構築
-			initArgs := []string{"init", "-input=false"}
+			initArgs := buildInitArgs()
 			if upgradeProviders {
-				initArgs = append(initArgs, "-upgrade")
 				fmt.Printf("[%s] Provider upgrade enabled\n", mod.Path)
 			}
 
