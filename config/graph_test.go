@@ -251,3 +251,66 @@ func TestComplexDependencyGraph(t *testing.T) {
 		t.Error("module d should come before e")
 	}
 }
+
+func TestBuildExecutionGraphValidation(t *testing.T) {
+	tests := []struct {
+		name     string
+		filename string
+		wantErr  string
+	}{
+		{"no modules", "empty-modules.yaml", "no modules defined"},
+		{"duplicate module path", "duplicate-path.yaml", "duplicate module path module-a"},
+		{"empty module path", "empty-path.yaml", "module at index 1 has an empty path"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := LoadConfig(filepath.Join("..", "testdata", tt.filename))
+			if err != nil {
+				t.Fatalf("failed to load config: %v", err)
+			}
+
+			_, err = BuildExecutionGraph(cfg)
+			if err == nil {
+				t.Fatalf("expected error containing %q, got none", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Errorf("expected error containing %q, got %q", tt.wantErr, err.Error())
+			}
+		})
+	}
+}
+
+func TestTopoSortedModulesIsDeterministic(t *testing.T) {
+	cfg := &Config{
+		Modules: []Module{
+			{Path: "z-module"},
+			{Path: "shared/monitoring", DependsOn: []string{"service-b", "service-a"}},
+			{Path: "service-b", DependsOn: []string{"shared/network"}},
+			{Path: "shared/network"},
+			{Path: "service-a", DependsOn: []string{"shared/network"}},
+			{Path: "a-module"},
+		},
+	}
+	want := []string{"z-module", "shared/network", "service-b", "service-a", "shared/monitoring", "a-module"}
+
+	// map の走査順に依存していれば、繰り返すうちに順序がずれる
+	for i := 0; i < 50; i++ {
+		graph, err := BuildExecutionGraph(cfg)
+		if err != nil {
+			t.Fatalf("failed to build graph: %v", err)
+		}
+		sorted, err := graph.TopoSortedModules()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		var got []string
+		for _, node := range sorted {
+			got = append(got, node.Path)
+		}
+		if strings.Join(got, ",") != strings.Join(want, ",") {
+			t.Fatalf("run %d: expected %v, got %v", i, want, got)
+		}
+	}
+}

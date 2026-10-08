@@ -47,11 +47,13 @@ The codebase is organized into three main packages:
   - `BuildExecutionGraph()`: Creates graph from config
   - `TopoSortedModules()`: Performs topological sort to determine execution order
   - Detects cyclic dependencies and validates all dependencies exist
+  - Rejects configs with no modules, empty module paths, or duplicate module paths
+  - Independent modules keep the order in which they appear in the config (deterministic)
 
 **3. terraform/** - Terraform execution
 - `executor.go`: `RunCommand()` wraps terraform CLI execution
   - Sets working directory to module path
-  - Captures and prefixes output with module name
+  - Streams stdout/stderr line by line, prefixed with module name
   - Returns errors from terraform commands
 
 ### Execution Flow

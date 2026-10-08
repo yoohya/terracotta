@@ -1,0 +1,4 @@
+base_path: test/path
+modules:
+  - path: module-a
+  - depends_on: ["module-a"]

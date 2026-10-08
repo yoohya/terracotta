@@ -1,157 +1,125 @@
 package terraform
 
 import (
+	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestRunCommand(t *testing.T) {
-	// Check if terraform is installed
-	_, err := exec.LookPath("terraform")
+// fakeTerraformScript は作業ディレクトリと引数を出力し、FAKE_TF_EXIT の値で終了する。
+const fakeTerraformScript = `#!/bin/sh
+echo "pwd=$(pwd -P)"
+echo "args=$*"
+echo "to-stderr" 1>&2
+exit "${FAKE_TF_EXIT:-0}"
+`
+
+// installFakeTerraform は偽の terraform を PATH の先頭に置く。
+func installFakeTerraform(t *testing.T) {
+	t.Helper()
+	requireSh(t)
+	binDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(binDir, "terraform"), []byte(fakeTerraformScript), 0755); err != nil {
+		t.Fatalf("failed to write fake terraform: %v", err)
+	}
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+// captureStdout は f の実行中に os.Stdout へ書かれた内容を返す。
+func captureStdout(t *testing.T, f func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
 	if err != nil {
-		t.Skip("terraform not found in PATH, skipping integration tests")
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	original := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = original }()
+
+	outCh := make(chan string)
+	go func() {
+		b, _ := io.ReadAll(r)
+		outCh <- string(b)
+	}()
+
+	f()
+	_ = w.Close()
+	return <-outCh
+}
+
+func TestRunCommand_RunsInModuleDirWithArgs(t *testing.T) {
+	installFakeTerraform(t)
+	moduleDir := t.TempDir()
+	resolvedDir, err := filepath.EvalSymlinks(moduleDir)
+	if err != nil {
+		t.Fatalf("failed to resolve temp dir: %v", err)
 	}
 
-	// Create a temporary directory for testing
-	tmpDir := t.TempDir()
+	var runErr error
+	out := captureStdout(t, func() {
+		runErr = RunCommand("shared/network", moduleDir, "apply", "-auto-approve", "-input=false")
+	})
 
-	tests := []struct {
-		name       string
-		prefix     string
-		modulePath string
-		args       []string
-		wantError  bool
-	}{
-		{
-			name:       "successful version check",
-			prefix:     "test-module",
-			modulePath: tmpDir,
-			args:       []string{"version"},
-			wantError:  false,
-		},
+	if runErr != nil {
+		t.Fatalf("unexpected error: %v", runErr)
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := RunCommand(tt.prefix, tt.modulePath, tt.args...)
-
-			if tt.wantError && err == nil {
-				t.Errorf("expected error but got none")
-			}
-
-			if !tt.wantError && err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-		})
+	for _, want := range []string{
+		"[shared/network] Running: terraform [apply -auto-approve -input=false]\n",
+		"[shared/network] pwd=" + resolvedDir + "\n",
+		"[shared/network] args=apply -auto-approve -input=false\n",
+		"[shared/network] to-stderr\n",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected output to contain %q, got:\n%s", want, out)
+		}
 	}
 }
 
-func TestRunCommandInvalidDirectory(t *testing.T) {
-	err := RunCommand("test", "/nonexistent/path", "init")
-	if err == nil {
+func TestRunCommand_ReturnsErrorOnNonZeroExit(t *testing.T) {
+	installFakeTerraform(t)
+	t.Setenv("FAKE_TF_EXIT", "2")
+
+	var runErr error
+	out := captureStdout(t, func() {
+		runErr = RunCommand("mod", t.TempDir(), "plan")
+	})
+
+	if runErr == nil {
+		t.Fatal("expected error for non-zero exit, got none")
+	}
+	if !strings.Contains(runErr.Error(), "exit status 2") {
+		t.Errorf("expected exit status 2, got %v", runErr)
+	}
+	// 失敗しても、それまでの出力は表示される
+	if !strings.Contains(out, "[mod] args=plan") {
+		t.Errorf("expected output before failure, got:\n%s", out)
+	}
+}
+
+func TestRunCommand_NonexistentDirectory(t *testing.T) {
+	installFakeTerraform(t)
+
+	var runErr error
+	captureStdout(t, func() {
+		runErr = RunCommand("mod", filepath.Join(t.TempDir(), "missing"), "init")
+	})
+
+	if runErr == nil {
 		t.Error("expected error for nonexistent directory, got none")
 	}
 }
 
-func TestRunCommandOutputPrefixing(t *testing.T) {
-	// This test verifies that output is properly prefixed
-	// We can't easily capture stdout in unit tests, but we can verify
-	// the function executes without panic
-	tmpDir := t.TempDir()
+func TestRunCommand_TerraformNotFound(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
 
-	err := RunCommand("test-prefix", tmpDir, "version")
-	// The command will likely fail (terraform not found or wrong args),
-	// but it shouldn't panic
-	_ = err
-}
+	var runErr error
+	captureStdout(t, func() {
+		runErr = RunCommand("mod", t.TempDir(), "version")
+	})
 
-func TestRunCommandWorkingDirectory(t *testing.T) {
-	// Create a test directory structure
-	tmpDir := t.TempDir()
-	subDir := filepath.Join(tmpDir, "submodule")
-	err := os.MkdirAll(subDir, 0755)
-	if err != nil {
-		t.Fatalf("failed to create test directory: %v", err)
-	}
-
-	// Create a test file to verify we're in the right directory
-	testFile := filepath.Join(subDir, "test.txt")
-	err = os.WriteFile(testFile, []byte("test"), 0644)
-	if err != nil {
-		t.Fatalf("failed to create test file: %v", err)
-	}
-
-	// Run a command in the subdirectory
-	// We expect it to execute with subDir as the working directory
-	err = RunCommand("test", subDir, "version")
-	_ = err // Command will fail, but that's OK for this test
-}
-
-func TestRunCommandArguments(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	tests := []struct {
-		name string
-		args []string
-	}{
-		{
-			name: "single argument",
-			args: []string{"init"},
-		},
-		{
-			name: "multiple arguments",
-			args: []string{"plan", "-out=tfplan"},
-		},
-		{
-			name: "arguments with flags",
-			args: []string{"apply", "-auto-approve", "-input=false"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := RunCommand("test", tmpDir, tt.args...)
-			// We don't check the error because terraform might not be installed
-			// We just verify the function doesn't panic
-			_ = err
-		})
-	}
-}
-
-// TestRunCommandOutput verifies that command output handling works correctly
-func TestRunCommandOutput(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	// Create a simple shell script that produces output
-	scriptPath := filepath.Join(tmpDir, "test.sh")
-	scriptContent := `#!/bin/bash
-echo "Line 1"
-echo "Line 2"
-echo "Line 3"
-`
-	err := os.WriteFile(scriptPath, []byte(scriptContent), 0755)
-	if err != nil {
-		t.Fatalf("failed to create test script: %v", err)
-	}
-
-	// Note: This test is platform-dependent and might not work on Windows
-	// In a real scenario, you'd want to handle this better
-	if _, err := os.Stat("/bin/bash"); err == nil {
-		// Run the command - it should execute without error
-		cmd := exec.Command("/bin/bash", scriptPath)
-		cmd.Dir = tmpDir
-		output, err := cmd.CombinedOutput()
-
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-
-		outputStr := string(output)
-		if !strings.Contains(outputStr, "Line 1") {
-			t.Error("expected output to contain 'Line 1'")
-		}
+	if runErr == nil {
+		t.Error("expected error when terraform is not in PATH, got none")
 	}
 }

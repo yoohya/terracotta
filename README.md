@@ -4,10 +4,11 @@ Terracotta is a lightweight Terraform module orchestrator designed to execute mu
 
 ## Features
 
-- Executes Terraform modules in sequence based on a YAML config
-- Automatically runs `terraform init` before each plan/apply
-- Environment-aware module paths (`/environments/{env}/{service}/{module}`)
-- Supports binary and Docker-based execution
+- Executes Terraform modules in dependency order based on a YAML config (`depends_on`)
+- Destroys modules in reverse dependency order with an interactive confirmation
+- Automatically runs `terraform init` before each plan/apply/destroy
+- Streams Terraform output in real time, prefixed with the module path
+- Validates the config (cyclic or unknown dependencies, duplicate or empty module paths)
 - Easily integratable with CI/CD pipelines
 
 ## Installation
@@ -17,8 +18,9 @@ Terracotta is a lightweight Terraform module orchestrator designed to execute mu
 You can download the latest version from [Releases](https://github.com/yoohya/terracotta/releases).
 
 ```bash
-# Example for macOS amd64
-curl -L https://github.com/yoohya/terracotta/releases/download/v0.1.4/terracotta_0.1.4_darwin_amd64.tar.gz | tar -xz terracotta
+# Example for macOS arm64 (replace VERSION with the release you want, e.g. 0.2.0)
+VERSION=0.2.0
+curl -L "https://github.com/yoohya/terracotta/releases/download/v${VERSION}/terracotta_${VERSION}_darwin_arm64.tar.gz" | tar -xz terracotta
 chmod +x terracotta
 ./terracotta version
 ```

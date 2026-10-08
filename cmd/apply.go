@@ -12,7 +12,8 @@ var applyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, sortedModules := prepareModules()
 
-		if runModulesFailFast(cfg, sortedModules, []string{"apply", "-auto-approve"}, "applied successfully") {
+		results := runModules(os.Stdout, cfg, sortedModules, []string{"apply", "-auto-approve"}, upgradeProviders, stopOnFailure)
+		if printSummary(os.Stdout, "Apply", sortedModules, results, "applied successfully") {
 			os.Exit(1)
 		}
 	},
