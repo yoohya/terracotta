@@ -18,8 +18,8 @@ Terracotta is a lightweight Terraform module orchestrator designed to execute mu
 You can download the latest version from [Releases](https://github.com/yoohya/terracotta/releases).
 
 ```bash
-# Example for macOS arm64 (replace VERSION with the release you want, e.g. 0.2.0)
-VERSION=0.2.0
+# Example for macOS arm64 (replace VERSION with the release you want, e.g. 0.2.1)
+VERSION=0.2.1
 curl -L "https://github.com/yoohya/terracotta/releases/download/v${VERSION}/terracotta_${VERSION}_darwin_arm64.tar.gz" | tar -xz terracotta
 chmod +x terracotta
 ./terracotta version
