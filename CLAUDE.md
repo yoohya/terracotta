@@ -34,7 +34,7 @@ The codebase is organized into three main packages:
 
 **1. cmd/** - CLI commands using Cobra framework
 - `root.go`: Root command and global flags (`configPath`, `awsProfile`)
-- `plan.go`: Runs `terraform init` and `plan` for all modules in dependency order
+- `plan.go`: Runs `terraform init` and `plan` for all modules in dependency order (`--destroy` runs `plan -destroy` in reverse dependency order)
 - `apply.go`: Runs `terraform init` and `apply -auto-approve` for all modules in dependency order
 - `destroy.go`: Runs `terraform init` and `destroy -auto-approve` in reverse dependency order after an interactive confirmation (skippable with `--auto-approve`)
 - `runner.go`: Shared helpers (config loading/sorting, init args, fail-fast module loop used by apply and destroy)
