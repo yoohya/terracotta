@@ -1,6 +1,6 @@
 # terracotta
 
-Terracotta is a lightweight Terraform module orchestrator designed to execute multiple modules in a defined order. It reads configuration from a YAML file and handles `terraform init`, `plan`, and `apply` steps automatically per module.
+Terracotta is a lightweight Terraform module orchestrator designed to execute multiple modules in a defined order. It reads configuration from a YAML file and handles `terraform init`, `plan`, `apply`, and `destroy` steps automatically per module.
 
 ## Features
 
@@ -97,6 +97,20 @@ terracotta apply --config examples/terracotta.yaml --profile my-aws-profile
 # Apply with provider upgrade
 terracotta apply --config examples/terracotta.yaml --upgrade
 ```
+
+### Execute Destroy
+
+```bash
+terracotta destroy --config examples/terracotta.yaml
+```
+
+Modules are destroyed in **reverse** dependency order (dependents first). Before running, Terracotta lists the modules to be destroyed and asks you to type `destroy` to confirm. Execution stops at the first failure and remaining modules are skipped.
+
+Available options:
+- `--config, -c`: Path to config file (default: `terracotta.yaml`)
+- `--profile`: AWS profile to use for authentication
+- `--upgrade`: Upgrade providers to the latest version during `terraform init`
+- `--auto-approve`: Skip the interactive confirmation (use with care, e.g. in CI)
 
 ### Show Version
 
