@@ -36,6 +36,8 @@ The codebase is organized into three main packages:
 - `root.go`: Root command and global flags (`configPath`, `awsProfile`)
 - `plan.go`: Runs `terraform init` and `plan` for all modules in dependency order
 - `apply.go`: Runs `terraform init` and `apply -auto-approve` for all modules in dependency order
+- `destroy.go`: Runs `terraform init` and `destroy -auto-approve` in reverse dependency order after an interactive confirmation (skippable with `--auto-approve`)
+- `runner.go`: Shared helpers (config loading/sorting, init args, fail-fast module loop used by apply and destroy)
 - `version.go`: Displays version information (injected at build time via ldflags)
 
 **2. config/** - Configuration and dependency resolution

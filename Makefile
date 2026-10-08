@@ -3,6 +3,9 @@ VERSION := $(shell git describe --tags --always)
 COMMIT := $(shell git rev-parse HEAD)
 DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# golangci-lint version installed by install-lint (used locally and in CI)
+GOLANGCI_LINT_VERSION := v2.7.2
+
 build:
 	go build -ldflags="-X 'github.com/yoohya/terracotta/cmd.version=$(VERSION)' -X 'github.com/yoohya/terracotta/cmd.commit=$(COMMIT)' -X 'github.com/yoohya/terracotta/cmd.date=$(DATE)'" -o bin/terracotta main.go
 
@@ -57,4 +60,4 @@ lint-all: fmt-check lint
 # Install golangci-lint (if not already installed)
 install-lint:
 	@which golangci-lint > /dev/null || \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/$(GOLANGCI_LINT_VERSION)/install.sh | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
