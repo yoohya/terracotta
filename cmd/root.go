@@ -14,9 +14,9 @@ var upgradeProviders bool
 var rootCmd = &cobra.Command{
 	Use:   "terracotta",
 	Short: "Terracotta is a lightweight Terraform module orchestrator",
-	Long:  `Terracotta helps you plan and apply multiple Terraform modules in order, based on configuration.`,
+	Long:  `Terracotta helps you plan, apply, and destroy multiple Terraform modules in dependency order, based on configuration.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Try 'terracotta plan --env dev' or 'terracotta apply --env dev'")
+		fmt.Println("Try 'terracotta plan --config terracotta.yaml' or 'terracotta --help'")
 	},
 }
 

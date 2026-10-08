@@ -20,30 +20,43 @@ var destroyCmd = &cobra.Command{
 	Short: "Destroy Terraform modules in reverse dependency order",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, sortedModules := prepareModules()
-		// 依存されている側を最後に消すため、apply と逆順で実行する
-		modules := reverseModules(sortedModules)
 
-		fmt.Println("The following modules will be DESTROYED in this order:")
-		for i, mod := range modules {
-			fmt.Printf("  %d. %s\n", i+1, mod.Path)
+		failed, err := runDestroy(os.Stdin, os.Stdout, cfg, sortedModules, destroyAutoApprove, upgradeProviders)
+		if err != nil {
+			fmt.Printf("Failed to read confirmation: %v\n", err)
+			os.Exit(1)
 		}
-
-		if !destroyAutoApprove {
-			ok, err := confirmDestroy(os.Stdin, os.Stdout)
-			if err != nil {
-				fmt.Printf("Failed to read confirmation: %v\n", err)
-				os.Exit(1)
-			}
-			if !ok {
-				fmt.Println("Destroy cancelled.")
-				return
-			}
-		}
-
-		if runModulesFailFast(cfg, modules, []string{"destroy", "-auto-approve"}, "destroyed successfully") {
+		if failed {
 			os.Exit(1)
 		}
 	},
+}
+
+// runDestroy は削除対象を表示して確認を取り、依存の逆順で destroy を実行する。
+// 確認で中止された場合は何も実行せず (false, nil) を返す。
+// 実行したモジュールに失敗があれば true を返す。
+func runDestroy(in io.Reader, out io.Writer, cfg *config.Config, sortedModules []*config.ModuleNode, autoApprove bool, upgrade bool) (bool, error) {
+	// 依存されている側を最後に消すため、apply と逆順で実行する
+	modules := reverseModules(sortedModules)
+
+	_, _ = fmt.Fprintln(out, "The following modules will be DESTROYED in this order:")
+	for i, mod := range modules {
+		_, _ = fmt.Fprintf(out, "  %d. %s\n", i+1, mod.Path)
+	}
+
+	if !autoApprove {
+		ok, err := confirmDestroy(in, out)
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			_, _ = fmt.Fprintln(out, "Destroy cancelled.")
+			return false, nil
+		}
+	}
+
+	results := runModules(out, cfg, modules, []string{"destroy", "-auto-approve"}, upgrade, stopOnFailure)
+	return printSummary(out, "Destroy", modules, results, "destroyed successfully"), nil
 }
 
 // reverseModules は元のスライスを変更せずに逆順のスライスを返す。
